@@ -533,7 +533,7 @@
         lookup #(if (qualified-keyword? %)
                   (let [schema-obj (s/get-spec %)]
                     (if (s/schema? schema-obj)
-                      (let [sub-schema (vec (some-> schema-obj keyspecs keys))
+                      (let [sub-schema (second (s/form schema-obj))
                             sub-selection (get sub-selects % [])]
                         (s/resolve-spec `(s/select ~sub-schema ~sub-selection)))
                       schema-obj))
