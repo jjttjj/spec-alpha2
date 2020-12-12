@@ -33,6 +33,8 @@
 (s/def ::m (s/keys :req [::mk1] :opt [::mk2 ::mk3]))
 (s/def ::mu (s/keys :req-un [::mk1]))
 (s/def ::sch (s/schema [::mk1 ::mk2 ::mk3]))
+(s/def ::schu (s/schema {:k1 ::k1}))
+(s/def ::schschu (s/schema [::schu]))
 
 (deftest conform-explain
   (let [a (s/and #(> % 5) #(< % 10))
@@ -61,6 +63,7 @@
         select1 (s/select [] [::k1 ::k2])
         select2 (s/select [] [::k1 {::sch [::mk1]}])
         select* (s/select [::k1 ::k2] [*])
+        select-schschu (s/select ::schschu [*])
         ]
     (are [spec x conformed ed]
       (let [co (result-or-ex (s/conform spec x))
@@ -219,6 +222,8 @@
       select* "oops" ::s/invalid [{:pred 'clojure.core/map? :val "oops"}]
       select* {::k1 1} ::s/invalid [{:pred '(clojure.core/fn [m] (clojure.core/contains? m ::k2)) :val {::k1 1}}]
       select* {::k1 1 ::k2 5} ::s/invalid [{:pred 'clojure.core/keyword? :val 5}]
+
+      select-schschu {::schu {:k1 1}} {::schu {:k1 1}} nil
 
       )))
 
