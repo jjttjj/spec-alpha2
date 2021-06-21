@@ -288,6 +288,9 @@
     (s/union [::k1 ::k2] {:a int? :b keyword?})
     '(clojure.alpha.spec/union [:clojure.test-clojure.spec/k1 :clojure.test-clojure.spec/k2] {:a clojure.core/int? :b clojure.core/keyword?})
 
+    (s/union [::k1 ::k2] (s/union {:a int?} {:b keyword?}))
+    '(clojure.alpha.spec/union [:clojure.test-clojure.spec/k1 :clojure.test-clojure.spec/k2] (clojure.alpha.spec/union {:a clojure.core/int?} {:b clojure.core/keyword?}))
+
     (s/select [] [::k1 ::k2])
     '(clojure.alpha.spec/select [] [:clojure.test-clojure.spec/k1 :clojure.test-clojure.spec/k2])
 
@@ -307,7 +310,9 @@
   ;; map schema, unqualified keys only
   (let [spk (prot/keyspecs* (s/schema {:a int?}))]
     (is (= (keys spk) [:a]))
-    (is (= `int? (s/form (get spk :a))))))
+    (is (= `int? (s/form (get spk :a)))))
+
+  (is (= (s/form (s/schema* [{:a `string?}])) (s/form (s/schema* {:a `string?})))))
 
 (deftest describing-evaled-specs
   (let [sp (s/spec #{1 2})]
