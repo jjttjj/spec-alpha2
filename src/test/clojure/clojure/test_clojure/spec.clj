@@ -43,6 +43,7 @@
 (s/def ::sch (s/schema [::mk1 ::mk2 ::mk3]))
 (s/def ::schu (s/schema {:k1 ::k1}))
 (s/def ::schschu (s/schema [::schu]))
+(s/def ::collm (s/coll-of ::sch))
 
 (deftest conform-explain
   (let [a (s/and #(> % 5) #(< % 10))
@@ -67,11 +68,13 @@
         irange (s/inst-in #inst "1939" #inst "1946")
         schema1 (s/schema [::k1 ::k2])
         schema2 (s/schema {:a int? :b keyword?})
+
         union (s/union [::k1 ::k2] {:a int? :b keyword?})
         select1 (s/select [] [::k1 ::k2])
         select2 (s/select [] [::k1 {::sch [::mk1]}])
         select* (s/select [::k1 ::k2] [*])
         select-schschu (s/select ::schschu [*])
+        select-coll (s/select [::collm] [::collm {::collm [[::mk1]]}])
         ]
     (are [spec x conformed ed]
       (let [co (result-or-ex (s/conform spec x))
@@ -233,6 +236,9 @@
 
       select-schschu {::schu {:k1 1}} {::schu {:k1 1}} nil
 
+      select-coll {::collm [{::mk1 1}]} {::collm [{::mk1 1}]} nil
+      select-coll {::collm [{::mk1 "1"}]} ::s/invalid {}
+      select-coll {::collm [{::mk2 :k}]} ::s/invalid [{:path [::collm] :pred '(clojure.core/fn [m] (clojure.core/contains? m ::mk1))}]
       )))
 
 (deftest forms

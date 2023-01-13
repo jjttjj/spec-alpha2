@@ -521,6 +521,10 @@
   [{:keys [schemas]}]
   (union-impl schemas nil))
 
+(defn coll-spec? [spec-form]
+  (and (seq? spec-form)
+       (= 'clojure.alpha.spec/coll-of (first spec-form))))
+
 (defn- select-impl
   [schema-form selection gfn]
   (let [id (java.util.UUID/randomUUID)
@@ -531,12 +535,21 @@
                    (->> selection (filter keyword?) set))
         sub-selects (->> selection (filter map?) (apply merge))
         lookup #(if (qualified-keyword? %)
-                  (let [schema-obj (s/get-spec %)]
-                    (if (s/schema? schema-obj)
-                      (let [sub-schema (second (s/form schema-obj))
+                  (let [spec-obj  (s/get-spec %)
+                        spec-form (and spec-obj (s/form spec-obj))]
+                    (cond
+                      (s/schema? spec-obj)
+                      (let [sub-schema    (second spec-form)
                             sub-selection (get sub-selects % [])]
                         (s/resolve-spec `(s/select ~sub-schema ~sub-selection)))
-                      schema-obj))
+
+                      (and (coll-spec? spec-form) (vector? (get sub-selects %)))
+                      (let [sub-schema    (second spec-form)
+                            sub-selection (first (get sub-selects % []))]
+                        (s/resolve-spec `(s/coll-of (s/select ~sub-schema ~sub-selection))))
+
+                      :else
+                      spec-obj))
                   (get key-specs %))
         opt-kset (set/difference (set/union (-> key-specs keys set)
                                             (-> sub-selects keys set))
