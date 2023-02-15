@@ -543,9 +543,9 @@
                             sub-selection (get sub-selects % [])]
                         (s/resolve-spec `(s/select ~sub-schema ~sub-selection)))
 
-                      (and (coll-spec? spec-form) (vector? (get sub-selects %)))
+                      (coll-spec? spec-form) ;;TODO deal with error handling for invalid coll-spec inputs
                       (let [sub-schema    (second spec-form)
-                            sub-selection (first (get sub-selects % []))]
+                            sub-selection (get sub-selects % [])]
                         (s/resolve-spec `(s/coll-of (s/select ~sub-schema ~sub-selection))))
 
                       :else

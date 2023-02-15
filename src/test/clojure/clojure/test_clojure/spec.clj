@@ -74,8 +74,9 @@
         select2 (s/select [] [::k1 {::sch [::mk1]}])
         select* (s/select [::k1 ::k2] [*])
         select-schschu (s/select ::schschu [*])
-        select-coll (s/select [::collm] [::collm {::collm [[::mk1]]}])
-        ]
+        select-coll (s/select [::collm] [::collm {::collm [::mk1]}])
+        select-coll-complex (s/select [::collm ::sch] [::collm {::collm [::mk1]} ::sch {::sch [::mk3]}])
+]
     (are [spec x conformed ed]
       (let [co (result-or-ex (s/conform spec x))
             e (result-or-ex (::sa/problems (s/explain-data spec x)))]
@@ -239,6 +240,10 @@
       select-coll {::collm [{::mk1 1}]} {::collm [{::mk1 1}]} nil
       select-coll {::collm [{::mk1 "1"}]} ::s/invalid {}
       select-coll {::collm [{::mk2 :k}]} ::s/invalid [{:path [::collm] :pred '(clojure.core/fn [m] (clojure.core/contains? m ::mk1))}]
+
+      select-coll-complex {::collm [{::mk1 1}] ::sch {::mk3 "some-v"}} {::collm [{::mk1 1}] ::sch {::mk3 "some-v"}} nil
+      select-coll-complex {::collm [{::mk1 "wrong"}] ::sch {::mk3 "some-v"}} ::s/invalid nil
+
       )))
 
 (deftest forms
