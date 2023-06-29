@@ -44,6 +44,7 @@
 (s/def ::schu (s/schema {:k1 ::k1}))
 (s/def ::schschu (s/schema [::schu]))
 (s/def ::collm (s/coll-of ::sch))
+(s/def ::coll-or (s/coll-of (s/or :i int? :k keyword?)))
 
 (deftest conform-explain
   (let [a (s/and #(> % 5) #(< % 10))
@@ -76,6 +77,7 @@
         select-schschu (s/select ::schschu [*])
         select-coll (s/select [::collm] [::collm {::collm [::mk1]}])
         select-coll-complex (s/select [::collm ::sch] [::collm {::collm [::mk1]} ::sch {::sch [::mk3]}])
+        select-coll-of-nonschema (s/select [::sch ::coll-or] [::collm {::collm [::mk1]} ::coll-or])
 ]
     (are [spec x conformed ed]
       (let [co (result-or-ex (s/conform spec x))
@@ -234,16 +236,18 @@
       select* "oops" ::s/invalid [{:pred 'clojure.core/map? :val "oops"}]
       select* {::k1 1} ::s/invalid [{:pred '(clojure.core/fn [m] (clojure.core/contains? m ::k2)) :val {::k1 1}}]
       select* {::k1 1 ::k2 5} ::s/invalid [{:pred 'clojure.core/keyword? :val 5}]
-
       select-schschu {::schu {:k1 1}} {::schu {:k1 1}} nil
-
       select-coll {::collm [{::mk1 1}]} {::collm [{::mk1 1}]} nil
       select-coll {::collm [{::mk1 "1"}]} ::s/invalid {}
+      select-coll {::collm "oops"} ::s/invalid [{:path [::collm] :pred 'clojure.core/coll? :val "oops"}]
+      ;;select-coll {::collm ["oops"]} ::s/invalid [{:path [::collm 0] :pred 'clojure.core/map? :val "oops"}] ; TODO: see line 206
       select-coll {::collm [{::mk2 :k}]} ::s/invalid [{:path [::collm] :pred '(clojure.core/fn [m] (clojure.core/contains? m ::mk1))}]
 
       select-coll-complex {::collm [{::mk1 1}] ::sch {::mk3 "some-v"}} {::collm [{::mk1 1}] ::sch {::mk3 "some-v"}} nil
       select-coll-complex {::collm [{::mk1 "wrong"}] ::sch {::mk3 "some-v"}} ::s/invalid nil
-
+      select-coll-of-nonschema {::collm [{::mk1 1}] ::coll-or [1]} {::collm [{::mk1 1}] ::coll-or [[:i 1]]} nil
+      select-coll-of-nonschema {::collm [{::mk1 1}] ::coll-or ["oops"]} ::s/invalid [{:path [::coll-or :i]} {:path [::coll-or :k]}]
+      select-coll-of-nonschema {::collm [{::mk1 1}]} ::s/invalid [{:path [] :pred '(clojure.core/fn [m] (clojure.core/contains? m ::coll-or))}]
       )))
 
 (deftest forms
