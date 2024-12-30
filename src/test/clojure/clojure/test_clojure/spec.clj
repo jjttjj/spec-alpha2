@@ -526,6 +526,36 @@
          ::sa/value {::mk1 100, ::k1 100}}
         (s/explain-data ::sch {::mk1 100 ::k1 100} {:closed #{::sch}}))))
 
+
+(s/def ::ref ::sch)
+(s/def ::sch2 (s/schema [::k1 ::ref]))
+
+(deftest indirect-schema-select
+  (let [good-data {::k1 1 ::ref {::mk1 1}}
+        bad-nested {::k1 1 ::ref {::mk1 "bad"}}
+        sel (s/select ::sch2 [::k1 ::ref {::ref [::mk1]}])]
+    (testing "indirect schema"
+      (is (s/valid? ::sch2 good-data))
+      (is (nil? (s/explain-data ::sch2 good-data)))
+      (is (false? (s/valid? ::sch2 bad-nested)))
+      (is (= [::ref ::mk1]
+             (-> (s/explain-data ::sch2 bad-nested)
+                 ::sa/problems
+                 first
+                 :path)))
+      #_(is (every? #(s/valid? ::sch2 %) (gen/sample (s/gen ::sch2) 10))))
+    (testing "indirect select"
+      (is (s/valid? sel good-data))
+      (is (nil? (s/explain-data sel good-data)))
+      (is (false? (s/valid? sel bad-nested)))
+      (is (= [::ref ::mk1]
+             (-> (s/explain-data sel bad-nested)
+                 ::sa/problems
+                 first
+                 :path)))
+      (is (->> (gen/sample (s/gen sel))
+               (every? (comp ::mk1 ::ref)))))))
+
 (comment
   (require '[clojure.test :refer (run-tests)])
   (in-ns 'clojure.test-clojure.spec)
