@@ -556,6 +556,11 @@
       (is (->> (gen/sample (s/gen sel))
                (every? (comp ::mk1 ::ref)))))))
 
+(deftest test-nonexistent-key
+  (is (s/valid? (s/schema []) {::nonexistent-key 1}))
+  (is (s/valid? (s/select [] [::k1])
+        {::k1               1
+         ::nonexistent-key 1})))
 (comment
   (require '[clojure.test :refer (run-tests)])
   (in-ns 'clojure.test-clojure.spec)

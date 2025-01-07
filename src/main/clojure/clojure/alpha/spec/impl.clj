@@ -418,7 +418,7 @@
         uqks (zipmap (keys unq-map) unq-specs)
         key-specs (merge uqks qks)
         lookup #(if (qualified-keyword? %)
-                  (s/resolve-spec %)
+                  (when (s/get-spec %) (s/resolve-spec %))
                   (get key-specs %))]
     ;; schemas cannot contain nested select specs
     (assert (every? #(if-let [sp (s/get-spec %)] (not (select? sp)) true) ks))
@@ -533,7 +533,7 @@
                    (->> selection (filter keyword?) set))
         sub-selects (->> selection (filter map?) (apply merge))
         lookup #(if (qualified-keyword? %)
-                  (let [schema-obj (s/resolve-spec %)]
+                  (let [schema-obj (when (s/get-spec %) (s/resolve-spec %))]
                     (if (s/schema? schema-obj)
                       (let [sub-schema (vec (some-> schema-obj keyspecs keys))
                             sub-selection (get sub-selects % [])]
